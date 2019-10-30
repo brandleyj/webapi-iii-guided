@@ -1,27 +1,40 @@
 const express = require("express"); // importing a CommonJS module
 const helmet = require("helmet");
+const morgan = require("morgan");
 
 const hubsRouter = require("./hubs/hubs-router.js");
 
 const server = express();
 
-function dateLogger(req, res, next) {
-	console.log(new Date().toISOString());
+// function logger(req, res, next) {
+// 	console.log(
+// 		`The Logger: [${new Date().toISOString()}] ${req.method} to ${
+// 			req.originalUrl
+// 		}  `
+// 	);
 
-	next();
-}
+// 	next();
+// }
 
-function URLLogger(req, res, next) {
-	console.log(`${req.method} ${req.originalUrl}`);
-
-	next();
+function gateKeeper(req, res, next) {
+	// date can come in the body, url params, query string, headers
+	//new way of reading data sent by the client
+	const password = req.headers.password || "";
+	if (!password) {
+		res.status(400).json({ message: "You shall not pass!" });
+	} else if (password.toLowerCase() === "melon") {
+		next();
+	} else {
+		res.status(401).json({ you: "cannot pass!!" });
+	}
 }
 
 // Global Middleware
 server.use(helmet()); // third party
 server.use(express.json()); // built-in
-server.use(dateLogger); // custom middleware
-server.use(URLLogger);
+server.use(gateKeeper);
+// server.use(logger); // custom middleware
+server.use(morgan("dev"));
 
 server.use("/api/hubs", hubsRouter);
 
